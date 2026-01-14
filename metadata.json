@@ -1,0 +1,5 @@
+{
+  "name": "Ansible Homelab Playbook Generator",
+  "description": "An interactive tool to generate Ansible playbooks for homelab configurations. Users can select base configurations, services, applications, and automation features to create customized, idempotent playbooks using the Gemini API.",
+  "requestFramePermissions": []
+}
