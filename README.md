@@ -218,7 +218,7 @@ The Gemini service checks `process.env.API_KEY` and throws early if missing.
 The current model identifier in `services/geminiService.ts` is:
 
 ```ts
-model: 'gemini-3-flash-preview'
+model: 'gemini-1.5-flash-latest'
 ```
 
 If you change this, ensure your API key and account have access to the new model.
