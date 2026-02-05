@@ -91,7 +91,7 @@ The UI remembers user theme preference in `localStorage` and applies it at root 
 │                                                                │
 │   ┌─────────────────────┐         ┌─────────────────────────┐  │
 │   │ Sidebar             │         │ CodeDisplay             │  │
-│   │ - category options  │  ---->  │ - generated text        │  │
+│   │ - category options  │         │ - generated text        │  │
 │   │ - selection state   │         │ - loading/error states  │  │
 │   └─────────┬───────────┘         └─────────────┬───────────┘  │
 │             │                                     ▲             │
