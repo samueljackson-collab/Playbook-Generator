@@ -4,7 +4,7 @@ import type { Selections } from '../types';
 import { PLAYBOOK_OPTIONS } from "../constants";
 
 if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set");
+    throw new Error("API_KEY environment variable not set. Please create a .env.local file with GEMINI_API_KEY=your_key_here.");
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -49,27 +49,58 @@ Based on the selections below, generate the necessary Ansible playbook content. 
     return prompt;
 }
 
+const TIMEOUT_MS = 30000;
+const RETRY_DELAY_MS = 2000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+            setTimeout(() => reject(new Error("Request timed out after 30 seconds. Please try again.")), ms)
+        )
+    ]);
+}
+
 export const generatePlaybook = async (selections: Selections): Promise<string> => {
     const prompt = buildPrompt(selections);
-    
-    try {
+
+    const attempt = async (): Promise<string> => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.0-flash',
             contents: prompt,
         });
 
         if (response.text) {
-             // Clean up the response to remove markdown backticks for code blocks
+            // Clean up the response to remove markdown backticks for code blocks
             return response.text.replace(/```(yaml|markdown)?/g, '').trim();
         } else {
             throw new Error("The API returned an empty response.");
         }
+    };
 
+    try {
+        return await withTimeout(attempt(), TIMEOUT_MS);
     } catch (error) {
-        console.error("Error generating playbook:", error);
-        if (error instanceof Error) {
-            throw error;
+        console.error("Error generating playbook (attempt 1):", error);
+
+        // Retry once for transient errors (not for API key or empty response errors)
+        const isTransient = error instanceof Error &&
+            !error.message.includes('API_KEY') &&
+            !error.message.includes('empty response') &&
+            !error.message.includes('timed out');
+
+        if (isTransient) {
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            try {
+                return await withTimeout(attempt(), TIMEOUT_MS);
+            } catch (retryError) {
+                console.error("Error generating playbook (attempt 2):", retryError);
+                if (retryError instanceof Error) throw retryError;
+                throw new Error("An unknown error occurred while generating the playbook.");
+            }
         }
+
+        if (error instanceof Error) throw error;
         throw new Error("An unknown error occurred while generating the playbook.");
     }
 };

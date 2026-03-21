@@ -22,7 +22,7 @@ export const PLAYBOOK_OPTIONS = {
     servicePlaybooks: {
         title: 'Service Playbooks',
         options: [
-            { label: 'Web Server Role (Nginx/Apache)', tooltip: 'Installs and infigures a web server, e.g., setting up a virtual host for myapp.local with PHP-FPM.' },
+            { label: 'Web Server Role (Nginx/Apache)', tooltip: 'Installs and configures a web server, e.g., setting up a virtual host for myapp.local with PHP-FPM.' },
             { label: 'Docker installation and configuration', tooltip: 'Installs Docker engine and Docker Compose, and adds users to the `docker` group for non-root access.' },
             { label: 'Docker Compose deployments', tooltip: 'Deploys containerized applications defined in a docker-compose.yml file. Ideal for multi-container services like Portainer or an ELK stack.' },
             { label: 'Kubernetes (k3s) cluster setup', tooltip: 'Deploys a lightweight k3s Kubernetes cluster, including setting up master/agent nodes and an ingress controller.' },

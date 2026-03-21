@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { CodeDisplay } from './components/CodeDisplay';
 import { Header } from './components/Header';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { generatePlaybook } from './services/geminiService';
 import type { Selections } from './types';
 
@@ -20,9 +21,10 @@ const App: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [notificationVisible, setNotificationVisible] = useState(false);
     const [theme, setTheme] = useState<Theme>(() => {
-        const savedTheme = localStorage.getItem('theme') as Theme;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
         const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        return savedTheme || (userPrefersDark ? 'dark' : 'light');
+        return userPrefersDark ? 'dark' : 'light';
     });
 
     useEffect(() => {
@@ -65,9 +67,13 @@ const App: React.FC = () => {
         <div className="flex flex-col h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-200 font-sans transition-colors duration-300">
             <Header theme={theme} toggleTheme={toggleTheme} />
             <div className="flex flex-1 overflow-hidden relative">
-                <Sidebar onGenerate={handleGenerate} isLoading={isLoading} />
+                <ErrorBoundary>
+                    <Sidebar onGenerate={handleGenerate} isLoading={isLoading} />
+                </ErrorBoundary>
                 <main className="flex-1 flex flex-col overflow-y-auto p-4 md:p-6 bg-gray-100/50 dark:bg-gray-800/50">
-                    <CodeDisplay code={generatedCode} isLoading={isLoading} error={error} />
+                    <ErrorBoundary>
+                        <CodeDisplay code={generatedCode} isLoading={isLoading} error={error} />
+                    </ErrorBoundary>
                 </main>
                 <div 
                     aria-live="assertive"
