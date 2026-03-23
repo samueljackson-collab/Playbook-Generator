@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface CodeDisplayProps {
     code: string;
@@ -45,10 +45,30 @@ const placeholderPlaybook = `---
       # service is not already started and enabled.
 `;
 
+async function copyToClipboard(text: string): Promise<void> {
+    if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+    }
+    // Fallback for non-HTTPS or older browsers
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+        document.execCommand('copy');
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
 const formatErrorWithLineNumbers = (errorMessage: string): React.ReactNode => {
     const regex = /(\b(line|column|position)\s+\d+)/gi;
     if (!errorMessage) return '';
-    
+
     const parts = errorMessage.split(regex);
 
     return (
@@ -71,23 +91,42 @@ export const CodeDisplay: React.FC<CodeDisplayProps> = ({ code, isLoading, error
     const [copied, setCopied] = useState(false);
     const [errorCopied, setErrorCopied] = useState(false);
     const [showErrorDetails, setShowErrorDetails] = useState(false);
+    const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const errorCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (code) setCopied(false);
     }, [code]);
 
-    const handleCopy = () => {
+    useEffect(() => {
+        return () => {
+            if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+            if (errorCopyTimerRef.current) clearTimeout(errorCopyTimerRef.current);
+        };
+    }, []);
+
+    const handleCopy = async () => {
         if (!code) return;
-        navigator.clipboard.writeText(code);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        try {
+            await copyToClipboard(code);
+            setCopied(true);
+            if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+            copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+        } catch {
+            console.error('Failed to copy to clipboard');
+        }
     };
 
-    const handleCopyError = () => {
+    const handleCopyError = async () => {
         if (!error) return;
-        navigator.clipboard.writeText(error);
-        setErrorCopied(true);
-        setTimeout(() => setErrorCopied(false), 2000);
+        try {
+            await copyToClipboard(error);
+            setErrorCopied(true);
+            if (errorCopyTimerRef.current) clearTimeout(errorCopyTimerRef.current);
+            errorCopyTimerRef.current = setTimeout(() => setErrorCopied(false), 2000);
+        } catch {
+            console.error('Failed to copy error to clipboard');
+        }
     };
 
 
@@ -108,15 +147,18 @@ export const CodeDisplay: React.FC<CodeDisplayProps> = ({ code, isLoading, error
         if (error) {
             let title = "Error Generating Playbook";
             let message = "An unexpected error occurred. Please try again.";
-            
+
             const lowerCaseError = error.toLowerCase();
 
-            if (lowerCaseError.includes('api key')) {
+            if (lowerCaseError.includes('api key') || lowerCaseError.includes('api_key')) {
                 title = "API Key Error";
                 message = "There seems to be an issue with your Gemini API key. Please ensure it's correctly configured and has the necessary permissions.";
             } else if (lowerCaseError.includes('rate limit')) {
                 title = "Rate Limit Exceeded";
                 message = "You've made too many requests in a short period. Please wait a moment before trying again.";
+            } else if (lowerCaseError.includes('timed out')) {
+                title = "Request Timed Out";
+                message = "The request took too long to complete. Please check your connection and try again.";
             } else if (lowerCaseError.includes('network') || lowerCaseError.includes('fetch')) {
                 title = "Network Error";
                 message = "Could not connect to the Gemini API. Please check your internet connection.";
@@ -153,7 +195,7 @@ export const CodeDisplay: React.FC<CodeDisplayProps> = ({ code, isLoading, error
                 </div>
             );
         }
-        
+
         if (!code) {
              return (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-500 p-4">
