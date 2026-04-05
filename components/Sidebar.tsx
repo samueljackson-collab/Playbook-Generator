@@ -9,8 +9,8 @@ interface SidebarProps {
 }
 
 const getAllOptions = (category: typeof PLAYBOOK_OPTIONS[keyof typeof PLAYBOOK_OPTIONS]) => {
-    if ('options' in category && category.options) return category.options;
     if ('subsections' in category && category.subsections) return category.subsections.flatMap(s => s.options);
+    if ('options' in category && category.options) return category.options;
     return [];
 };
 
