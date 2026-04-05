@@ -8,9 +8,15 @@ interface SidebarProps {
     isLoading: boolean;
 }
 
+const getAllOptions = (category: typeof PLAYBOOK_OPTIONS[keyof typeof PLAYBOOK_OPTIONS]) => {
+    if ('subsections' in category && category.subsections) return category.subsections.flatMap(s => s.options);
+    if ('options' in category && category.options) return category.options;
+    return [];
+};
+
 const initialSelections = Object.keys(PLAYBOOK_OPTIONS).reduce((acc, key) => {
     const categoryKey = key as keyof typeof PLAYBOOK_OPTIONS;
-    acc[categoryKey] = PLAYBOOK_OPTIONS[categoryKey].options.reduce((opts, option) => {
+    acc[categoryKey] = getAllOptions(PLAYBOOK_OPTIONS[categoryKey]).reduce((opts, option) => {
         opts[option.label] = false;
         return opts;
     }, {} as { [key: string]: boolean });
@@ -32,6 +38,13 @@ const Checkbox: React.FC<{ id: string; label: string; tooltip: string; checked: 
         <div className="absolute left-0 bottom-full mb-2 w-64 p-2 text-xs text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
             {tooltip}
         </div>
+    </div>
+);
+
+const SubSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+    <div className="mb-3 mt-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1 pl-1">{title}</h3>
+        {children}
     </div>
 );
 
@@ -90,16 +103,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isLoading }) => {
                 <div className="flex-grow">
                     {Object.entries(PLAYBOOK_OPTIONS).map(([key, value]) => (
                         <Section key={key} title={value.title}>
-                            {value.options.map(option => (
-                                <Checkbox
-                                    key={option.label}
-                                    id={`${key}-${option.label}`}
-                                    label={option.label}
-                                    tooltip={option.tooltip}
-                                    checked={selections[key as keyof Selections][option.label]}
-                                    onChange={(checked) => handleCheckboxChange(key as keyof Selections, option.label, checked)}
-                                />
-                            ))}
+                            {'subsections' in value && value.subsections
+                                ? value.subsections.map(sub => (
+                                    <SubSection key={sub.title} title={sub.title}>
+                                        {sub.options.map(option => (
+                                            <Checkbox
+                                                key={option.label}
+                                                id={`${key}-${option.label}`}
+                                                label={option.label}
+                                                tooltip={option.tooltip}
+                                                checked={selections[key as keyof Selections][option.label]}
+                                                onChange={(checked) => handleCheckboxChange(key as keyof Selections, option.label, checked)}
+                                            />
+                                        ))}
+                                    </SubSection>
+                                ))
+                                : ('options' in value && value.options ? value.options : []).map(option => (
+                                    <Checkbox
+                                        key={option.label}
+                                        id={`${key}-${option.label}`}
+                                        label={option.label}
+                                        tooltip={option.tooltip}
+                                        checked={selections[key as keyof Selections][option.label]}
+                                        onChange={(checked) => handleCheckboxChange(key as keyof Selections, option.label, checked)}
+                                    />
+                                ))
+                            }
                         </Section>
                     ))}
                 </div>
