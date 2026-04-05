@@ -11,4 +11,7 @@ export interface Selections {
     testing: SelectionCategory;
     documentation: SelectionCategory;
     advancedConfiguration: SelectionCategory;
+    sdePlaybooks: SelectionCategory;
+    desktopSupportPlaybooks: SelectionCategory;
+    grcPlaybooks: SelectionCategory;
 }
