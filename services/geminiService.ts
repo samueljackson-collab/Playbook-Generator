@@ -9,6 +9,8 @@ if (!process.env.API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+const MODEL = 'gemini-2.5-flash';
+
 function buildPrompt(selections: Selections, customVariables: string, ansibleVersion: string): string {
     const securitySelections = selections.securityHardening;
     const isVaultSelected = securitySelections && securitySelections['Ansible Vault integration'];
@@ -158,7 +160,6 @@ Based on the selections below, generate the necessary Ansible playbook content. 
 **User Selections:**
 `;
 
-    // Dynamically build the selections part of the prompt
     for (const categoryKey in PLAYBOOK_OPTIONS) {
         const key = categoryKey as keyof Selections;
         const categoryData = PLAYBOOK_OPTIONS[key as keyof typeof PLAYBOOK_OPTIONS];
@@ -193,7 +194,7 @@ export const generatePlaybook = async (selections: Selections, customVariables: 
     
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: MODEL,
             contents: prompt,
         });
 
@@ -268,7 +269,7 @@ ${playbookContent}
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: MODEL,
             contents: prompt,
         });
 
@@ -287,7 +288,7 @@ export const getDocumentationSuggestion = async (selections: Selections, customV
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: MODEL,
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -309,7 +310,6 @@ export const getDocumentationSuggestion = async (selections: Selections, customV
         });
         
         if (response.text) {
-            // The response from the API is a string that needs to be parsed into a JSON object.
             const result = JSON.parse(response.text);
             return result as DocSuggestion;
         } else {
