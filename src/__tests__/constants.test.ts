@@ -36,10 +36,15 @@ describe('PLAYBOOK_OPTIONS', () => {
     expect(Object.keys(PLAYBOOK_OPTIONS).length).toBeGreaterThan(0);
   });
 
-  it('every option category has a non-empty array of items', () => {
-    for (const [category, items] of Object.entries(PLAYBOOK_OPTIONS)) {
-      expect(Array.isArray(items), `${category} should be array`).toBe(true);
-      expect((items as unknown[]).length, `${category} should be non-empty`).toBeGreaterThan(0);
+  it('every option category has a non-empty title, description, and options array', () => {
+    for (const [category, value] of Object.entries(PLAYBOOK_OPTIONS)) {
+      const { title, description, options } = value as { title: string; description: string; options: unknown[] };
+      expect(typeof title, `${category}.title should be string`).toBe('string');
+      expect(title.length, `${category}.title should be non-empty`).toBeGreaterThan(0);
+      expect(typeof description, `${category}.description should be string`).toBe('string');
+      expect(description.length, `${category}.description should be non-empty`).toBeGreaterThan(0);
+      expect(Array.isArray(options), `${category}.options should be array`).toBe(true);
+      expect(options.length, `${category}.options should be non-empty`).toBeGreaterThan(0);
     }
   });
 });
