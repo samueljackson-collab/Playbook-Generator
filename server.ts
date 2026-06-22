@@ -6,8 +6,7 @@ import { simpleGit } from 'simple-git';
 import fs from 'fs/promises';
 import os from 'os';
 
-// In-memory rate limiter: 5 Git operations per minute per IP
-const gitRateLimiter = new Map<string, { count: number; reset: number }>();
+// In-memory rate limiter: 5 Git operations per minute per IP\nconst gitRateLimiter = new Map<string, { count: number; reset: number }>();\n\n// Periodically clean up expired rate limit entries to prevent memory leaks\nsetInterval(() => {\n  const now = Date.now();\n  for (const [ip, entry] of gitRateLimiter.entries()) {\n    if (now > entry.reset) {\n      gitRateLimiter.delete(ip);\n    }\n  }\n}, 60_000).unref();
 
 function checkGitRateLimit(ip: string): boolean {
   const now = Date.now();
