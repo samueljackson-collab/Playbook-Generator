@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { CodeDisplay } from './components/CodeDisplay';
 import { Header } from './components/Header';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { generatePlaybook } from './services/geminiService';
-import type { Selections } from './types';
+import { ExportTools } from './components/ExportTools';
+import { DocumentationSuggestion } from './components/DocumentationSuggestion';
+import { generatePlaybook, getDocumentationSuggestion } from './services/geminiService';
+import type { Selections, DocSuggestion } from './types';
+import HomePage from './components/HomePage';
 
 type Theme = 'light' | 'dark';
 
@@ -20,11 +22,13 @@ const App: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [notificationVisible, setNotificationVisible] = useState(false);
+    const [docSuggestion, setDocSuggestion] = useState<DocSuggestion | null>(null);
+    const [isSuggestionLoading, setIsSuggestionLoading] = useState<boolean>(false);
+    const [isSuccess, setIsSuccess] = useState(false);
     const [theme, setTheme] = useState<Theme>(() => {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+        const savedTheme = localStorage.getItem('theme') as Theme;
         const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        return userPrefersDark ? 'dark' : 'light';
+        return savedTheme || (userPrefersDark ? 'dark' : 'light');
     });
 
     useEffect(() => {
@@ -42,17 +46,40 @@ const App: React.FC = () => {
             return () => clearTimeout(timer);
         }
     }, [notificationVisible]);
+    
+    const resetSuccessState = () => {
+        if (isSuccess) {
+            setIsSuccess(false);
+        }
+    };
 
-    const handleGenerate = async (selections: Selections) => {
+    const handleGenerate = async (selections: Selections, customVariables: string, ansibleVersion: string) => {
         setIsLoading(true);
         setError(null);
         setGeneratedCode('');
+        setDocSuggestion(null);
+        setIsSuccess(false);
+
         try {
-            const code = await generatePlaybook(selections);
+            const code = await generatePlaybook(selections, customVariables, ansibleVersion);
             setGeneratedCode(code);
             setNotificationVisible(true);
+            setIsSuccess(true);
+
+            try {
+                setIsSuggestionLoading(true);
+                const suggestion = await getDocumentationSuggestion(selections, customVariables, ansibleVersion);
+                setDocSuggestion(suggestion);
+            } catch (suggestionErr) {
+                console.error("Failed to get documentation suggestion:", suggestionErr);
+                // Non-critical error, so we don't show it to the user.
+            } finally {
+                setIsSuggestionLoading(false);
+            }
+
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+            setIsSuccess(false);
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -67,13 +94,21 @@ const App: React.FC = () => {
         <div className="flex flex-col h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-200 font-sans transition-colors duration-300">
             <Header theme={theme} toggleTheme={toggleTheme} />
             <div className="flex flex-1 overflow-hidden relative">
-                <ErrorBoundary>
-                    <Sidebar onGenerate={handleGenerate} isLoading={isLoading} />
-                </ErrorBoundary>
+                <Sidebar onGenerate={handleGenerate} isLoading={isLoading} isSuccess={isSuccess} onInteraction={resetSuccessState} />
                 <main className="flex-1 flex flex-col overflow-y-auto p-4 md:p-6 bg-gray-100/50 dark:bg-gray-800/50">
-                    <ErrorBoundary>
-                        <CodeDisplay code={generatedCode} isLoading={isLoading} error={error} />
-                    </ErrorBoundary>
+                    <div className="flex-1 flex flex-col min-h-0">
+                        {isLoading || error || generatedCode ? (
+                            <CodeDisplay code={generatedCode} isLoading={isLoading} error={error} />
+                        ) : (
+                            <HomePage />
+                        )}
+                    </div>
+                    {generatedCode && !isLoading && !error && (
+                        <div className="mt-6 flex-shrink-0 space-y-6">
+                            <DocumentationSuggestion suggestion={docSuggestion} isLoading={isSuggestionLoading} />
+                            <ExportTools code={generatedCode} />
+                        </div>
+                    )}
                 </main>
                 <div 
                     aria-live="assertive"

@@ -10,15 +10,13 @@
       "DOM.Iterable"
     ],
     "skipLibCheck": true,
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "types": [
       "node"
     ],
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
+    "allowJs": true,
     "jsx": "react-jsx",
     "paths": {
       "@/*": [

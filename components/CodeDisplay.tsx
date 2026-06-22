@@ -1,5 +1,7 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface CodeDisplayProps {
     code: string;
@@ -19,56 +21,65 @@ const CheckIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
-const placeholderPlaybook = `---
-# This is an example of a simple Ansible playbook.
-# Select options from the sidebar and click "Generate Playbook"
-# to create your own customized, role-based configuration.
+const EyeIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+  </svg>
+);
 
-- name: Example | Install and start a web server
-  hosts: all
-  become: true
+const EyeOffIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 .946-3.11 3.56-5.447 6.833-6.166M9 5.062A7.025 7.025 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.054 10.054 0 01-1.325 3.386m-3.386-3.386a3 3 0 11-4.243-4.243M1 1l22 22" />
+  </svg>
+);
 
-  tasks:
-    - name: "Install the latest version of Nginx"
-      ansible.builtin.package:
-        name: nginx
-        state: latest
-      # This task is idempotent. If Nginx is already the latest version,
-      # Ansible will report "ok" instead of "changed".
+const KeyIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-4a6 6 0 0110.257-4.257m1.5-1.5a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-4a6 6 0 0110.257-4.257m1.5-1.5" />
+  </svg>
+);
 
-    - name: "Ensure Nginx is running and enabled on boot"
-      ansible.builtin.service:
-        name: nginx
-        state: started
-        enabled: yes
-      # This task is also idempotent. It only acts if the
-      # service is not already started and enabled.
-`;
+const ClockIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
 
-async function copyToClipboard(text: string): Promise<void> {
-    if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        return;
-    }
-    // Fallback for non-HTTPS or older browsers
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    try {
-        document.execCommand('copy');
-    } finally {
-        document.body.removeChild(textarea);
-    }
-}
+const WifiOffIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9.172a4 4 0 105.544 5.544m0-5.544l-5.544 5.544M3 10a11.917 11.917 0 0118 0M5 14a7.917 7.917 0 0114 0" />
+    </svg>
+);
+
+const DocumentRemoveIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+    </svg>
+);
+
+const ExclamationCircleIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+
+const CodeIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+    </svg>
+);
+
+const ServerIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+    </svg>
+);
 
 const formatErrorWithLineNumbers = (errorMessage: string): React.ReactNode => {
     const regex = /(\b(line|column|position)\s+\d+)/gi;
     if (!errorMessage) return '';
-
+    
     const parts = errorMessage.split(regex);
 
     return (
@@ -91,42 +102,23 @@ export const CodeDisplay: React.FC<CodeDisplayProps> = ({ code, isLoading, error
     const [copied, setCopied] = useState(false);
     const [errorCopied, setErrorCopied] = useState(false);
     const [showErrorDetails, setShowErrorDetails] = useState(false);
-    const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const errorCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (code) setCopied(false);
     }, [code]);
 
-    useEffect(() => {
-        return () => {
-            if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-            if (errorCopyTimerRef.current) clearTimeout(errorCopyTimerRef.current);
-        };
-    }, []);
-
-    const handleCopy = async () => {
+    const handleCopy = () => {
         if (!code) return;
-        try {
-            await copyToClipboard(code);
-            setCopied(true);
-            if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-            copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
-        } catch {
-            console.error('Failed to copy to clipboard');
-        }
+        navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleCopyError = async () => {
+    const handleCopyError = () => {
         if (!error) return;
-        try {
-            await copyToClipboard(error);
-            setErrorCopied(true);
-            if (errorCopyTimerRef.current) clearTimeout(errorCopyTimerRef.current);
-            errorCopyTimerRef.current = setTimeout(() => setErrorCopied(false), 2000);
-        } catch {
-            console.error('Failed to copy error to clipboard');
-        }
+        navigator.clipboard.writeText(error);
+        setErrorCopied(true);
+        setTimeout(() => setErrorCopied(false), 2000);
     };
 
 
@@ -147,43 +139,75 @@ export const CodeDisplay: React.FC<CodeDisplayProps> = ({ code, isLoading, error
         if (error) {
             let title = "Error Generating Playbook";
             let message = "An unexpected error occurred. Please try again.";
-
+            let Icon = <ExclamationCircleIcon className="h-8 w-8 text-red-500 dark:text-red-400 mb-3" />;
+            
             const lowerCaseError = error.toLowerCase();
 
-            if (lowerCaseError.includes('api key') || lowerCaseError.includes('api_key')) {
+            if (lowerCaseError.includes('api key')) {
                 title = "API Key Error";
                 message = "There seems to be an issue with your Gemini API key. Please ensure it's correctly configured and has the necessary permissions.";
+                Icon = <KeyIcon className="h-8 w-8 text-red-500 dark:text-red-400 mb-3" />;
             } else if (lowerCaseError.includes('rate limit')) {
                 title = "Rate Limit Exceeded";
                 message = "You've made too many requests in a short period. Please wait a moment before trying again.";
-            } else if (lowerCaseError.includes('timed out')) {
-                title = "Request Timed Out";
-                message = "The request took too long to complete. Please check your connection and try again.";
+                Icon = <ClockIcon className="h-8 w-8 text-red-500 dark:text-red-400 mb-3" />;
             } else if (lowerCaseError.includes('network') || lowerCaseError.includes('fetch')) {
                 title = "Network Error";
                 message = "Could not connect to the Gemini API. Please check your internet connection.";
+                Icon = <WifiOffIcon className="h-8 w-8 text-red-500 dark:text-red-400 mb-3" />;
             } else if (lowerCaseError.includes('empty response')) {
                 title = "Empty Response";
                 message = "The API returned no data. This might be a temporary issue or a problem with the request. Please try again.";
+                Icon = <DocumentRemoveIcon className="h-8 w-8 text-red-500 dark:text-red-400 mb-3" />;
+            } else if (lowerCaseError.includes('400 bad request') || lowerCaseError.includes('invalid argument')) {
+                title = "Invalid Request";
+                message = "The request sent to the API was invalid. This could be due to a malformed prompt or an issue with the selected options.";
+                Icon = <CodeIcon className="h-8 w-8 text-red-500 dark:text-red-400 mb-3" />;
+            } else if (lowerCaseError.includes('500') || lowerCaseError.includes('internal server error') || lowerCaseError.includes('service unavailable')) {
+                 title = "Server Error";
+                 message = "The Gemini API is currently experiencing issues or is unavailable. Please try again later.";
+                 Icon = <ServerIcon className="h-8 w-8 text-red-500 dark:text-red-400 mb-3" />;
             }
+
 
             return (
                 <div className="flex items-center justify-center h-full text-red-500 dark:text-red-400">
-                    <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 p-6 rounded-lg text-center max-w-lg">
+                    <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 p-6 rounded-lg text-center max-w-lg flex flex-col items-center">
+                        {Icon}
                         <h3 className="text-xl font-semibold mb-2 text-red-800 dark:text-red-200">{title}</h3>
                         <p className="text-red-700 dark:text-gray-300">{message}</p>
                         <div className="flex justify-center gap-4 mt-4">
                             <button
                                 onClick={() => setShowErrorDetails(!showErrorDetails)}
-                                className="px-4 py-2 text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 focus:ring-gray-500"
+                                className="flex items-center px-4 py-2 text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 focus:ring-gray-500"
                             >
-                                {showErrorDetails ? 'Hide Details' : 'View Details'}
+                                {showErrorDetails ? (
+                                    <>
+                                        <EyeOffIcon className="w-5 h-5 mr-2" />
+                                        <span>Hide Details</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <EyeIcon className="w-5 h-5 mr-2" />
+                                        <span>View Details</span>
+                                    </>
+                                )}
                             </button>
                              <button
                                 onClick={handleCopyError}
-                                className="px-4 py-2 text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 focus:ring-gray-500"
+                                className="flex items-center px-4 py-2 text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 focus:ring-gray-500"
                             >
-                                {errorCopied ? 'Copied!' : 'Copy Error'}
+                                {errorCopied ? (
+                                    <>
+                                        <CheckIcon className="w-5 h-5 mr-2 text-green-500" />
+                                        <span>Copied!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <CopyIcon className="w-5 h-5 mr-2" />
+                                        <span>Copy Error</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                         {showErrorDetails && (
@@ -195,38 +219,19 @@ export const CodeDisplay: React.FC<CodeDisplayProps> = ({ code, isLoading, error
                 </div>
             );
         }
-
-        if (!code) {
-             return (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-500 p-4">
-                    <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-300">Welcome to the Playbook Generator</h2>
-                    <p className="mt-2 mb-6 text-center max-w-xl">
-                        Select configurations from the sidebar, then click "Generate Playbook". Your custom Ansible code will appear here.
-                    </p>
-                    <div className="w-full max-w-2xl bg-white dark:bg-gray-900/70 rounded-lg shadow-inner border border-gray-200 dark:border-gray-700/50">
-                        <div className="p-2 bg-gray-100 dark:bg-gray-700/50 rounded-t-lg">
-                            <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Example Playbook</p>
-                        </div>
-                        <pre className="p-4 text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap overflow-auto">
-                            <code>{placeholderPlaybook}</code>
-                        </pre>
-                    </div>
-                </div>
-            );
-        }
-
+        
         return (
             <div className="relative h-full">
                 <button
                     onClick={handleCopy}
-                    className="absolute top-2 right-2 p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors"
+                    className="absolute top-2 right-2 p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors z-10"
                     aria-label="Copy code to clipboard"
                 >
                     {copied ? <CheckIcon className="w-5 h-5 text-green-500" /> : <CopyIcon className="w-5 h-5" />}
                 </button>
-                <pre className="h-full w-full overflow-auto bg-white dark:bg-gray-900/70 p-4 rounded-lg text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                    <code>{code}</code>
-                </pre>
+                <div className="h-full w-full overflow-auto bg-white dark:bg-gray-900/70 p-4 rounded-lg text-sm text-gray-800 dark:text-gray-200 prose dark:prose-invert max-w-none">
+                    <Markdown remarkPlugins={[remarkGfm]}>{code}</Markdown>
+                </div>
             </div>
         );
     };
